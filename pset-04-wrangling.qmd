@@ -49,7 +49,7 @@ request <- request(paste0("https://api.census.gov/data/2021/pep/population?get=P
 
 ```{r}
 response <- req_perform(request)
-# response status checked but not printed as GET portion of printed response shows my API Key
+resp_status(response)
 ```
 
 4. Use a function from the **httr2** package to determine the content type of your response.
@@ -146,8 +146,11 @@ population <- population |>
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
 cases_raw <- request(api) |> 
   req_url_query() |>
-  req_perform() |>
-  resp_body_json(simplifyDataFrame = TRUE) 
+  req_perform()
+
+resp_status(cases_raw)
+cases_raw <- resp_body_json(cases_raw,simplifyDataFrame = TRUE) 
+
 ```
 
 No, all of the data is not there because the API has a default limit of 1000 on the amount of data that can be downloaded. If we want more, we need to specify with the limit parameter.
@@ -160,7 +163,11 @@ We see exactly 1,000 rows. We should be seeing over $52 \times 3$ rows per state
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
 cases<- request(api) |> 
   req_url_query(`$limit` = "10000000000") |>
-  req_perform() |>
+  req_perform()
+
+resp_status(cases)
+
+cases <- cases|>
   resp_body_json(simplifyDataFrame = TRUE) |>
   select(state, end_date, new_cases) |>
   rename(date = end_date, cases = new_cases) |>
@@ -195,9 +202,13 @@ ggplot(aes(x = date, y = cases_per_100k, color = state)) +
 ```{r}
 library(knitr)
 # recreating cases for this question because I had already changed date from type character to date in a previous question
-request(api) |> 
+casesq13 <- request(api) |> 
   req_url_query(`$limit` = "10000000000") |>
-  req_perform() |>
+  req_perform() 
+
+resp_status(casesq13)
+
+casesq13|>
   resp_body_json(simplifyDataFrame = TRUE) |>
   select(state, end_date, new_cases) |>
   rename(date = end_date, cases = new_cases) |>
@@ -219,10 +230,13 @@ Use **httr2** to download COVID-19 death data from this endpoint. Make sure to r
 
 
 ```{r}
-# Your code here
 deaths <- request(deaths_url) |> 
   req_url_query(`$limit` = "10000000000") |>
-  req_perform() |>
+  req_perform() 
+
+resp_status(deaths)
+
+deaths <- deaths |>
   resp_body_json(simplifyDataFrame = TRUE) |>
   select(state, date = end_date, deaths = covid_19_deaths) |>
   mutate(deaths = as.numeric(deaths), date = as.Date(date)) |>
@@ -233,7 +247,6 @@ deaths <- request(deaths_url) |>
 15. Using the `deaths` dataset you created, make a bar plot showing the total COVID-19 deaths by state. Show only the top 10 states with the highest death counts. Order the bars from highest to lowest and use appropriate labels and title.
 
 ```{r}
-# Your code here
 deaths |>
   group_by(state) |>
   filter(!state %in% c('United States', 'New York City')) |>
